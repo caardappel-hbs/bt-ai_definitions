@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<tree classname="PatrolAndShoot_BT" filename="BT_PatrolAndShootAI.cs">
+  <btroot>
+    <selector name="patrol and shoot AI root">
+      <sequence name="if shutdown, restart">
+	<isShutdown />
+	<mechStartUp />
+      </sequence>
+      <sequence name="if prone, stand up">
+	<movementAvailable />
+	<isProne />
+	<stand />
+      </sequence>
+      <sequence name="move along route">
+	<movementAvailable />
+	<successDecorator name="maybe sensor lock">
+	  <sequence name="EvalSensorLock">
+	    <selector>
+	      <sequence name="sensor lock success">
+		<hasSensorLockAbility />
+		<hasSensorLockTarget />
+		<sortEnemiesBySensorLockQuality />
+		<recordHighestPriorityEnemyAsSensorLockTarget />
+	      </sequence>
+	      <!-- otherwise, make sure stuff is cleared -->
+	      <clearSensorLock />
+	    </selector>
+	  </sequence>
+	</successDecorator>
+	<unitHasRoute />
+	<inverter>
+	  <lanceHasCompletedRoute/>
+	</inverter>
+	<selector>
+	  <lanceHasStartedRoute />
+	  <lanceStartRoute />
+	</selector>
+	<blockUntilPathfindingReady />
+	<moveAlongRoute />
+      </sequence>
+      <sequence name="ChoseToSensorLock">
+	<hasSensorLockAbility />
+	<hasRecordedSensorLockTarget />
+	<setMood arguments="Aggressive" />
+	<sensorLockRecordedSensorLockTarget />
+      </sequence>
+      <sequence name="opportunity fire">
+	<lanceDetectsEnemies />
+	<findDetectedEnemies />
+	<attackAvailable />
+	<sortEnemiesByThreat />
+	<useNormalToHitThreshold />
+	<selector name="PriorityAttack">
+	  <sequence>
+	    <inverter>
+	      <wasTargetedRecently />
+	    </inverter>
+	    <randomPercentageLessThanBV arguments="Float_PriorityAttackPercentage" />
+	    <sortEnemiesByPriorityList />
+	  </sequence>
+	  <maybeFilterOutPriorityTargets />
+	  <filterKeepingRecentAttackers />
+	  <succeed />
+	</selector>
+	<shootAtHighestPriorityEnemy />
+      </sequence>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

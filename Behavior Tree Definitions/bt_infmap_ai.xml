@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<tree classname="InfMapAI_BT" filename="BT_InfMapAI.cs">
+  <btroot>
+    <selector name="Influence Map AI root">
+      <sequence name="if prone, stand up">
+	<movementAvailable />
+	<isProne />
+	<stand />
+      </sequence>
+      <sequence name="move based on influence map">
+	<lanceDetectsEnemies />
+	<findDetectedEnemies />
+	<movementAvailable />
+	<clearMoveCandidates />
+	<selector>
+	  <sequence name="move and shoot">
+	    <canMoveAndShootWithoutOverheating />
+	    <generateForwardMoveCandidates />
+	    <generateReverseMoveCandidates />
+	    <generateJumpMoveCandidates />
+	    <hasMoveCandidates />
+	    <debugLog arguments="I have move candidates. Setting mood aggressive." />
+	    <setMood arguments="aggressive" />
+	  </sequence>
+	  <sequence name="run away">
+	    <debugLog arguments="I am running away. Setting mood defensive." />
+	    <generateMoveCandidates />
+	    <setMood arguments="defensive" />
+	  </sequence>
+	</selector>
+	<sortMoveCandidatesByInfMap />
+	<moveTowardsHighestPriorityMoveCandidate />
+      </sequence>
+      <sequence name="simple attack">
+	<attackAvailable />
+	<sortEnemiesByEffectiveness />
+	<useNormalToHitThreshold />
+	<shootAtHighestPriorityEnemy />
+      </sequence>
+      <xxxpass />
+    </selector>
+  </btroot>
+</tree>

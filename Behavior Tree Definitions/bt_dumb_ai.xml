@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<tree classname="DumbAI_BT" filename="BT_DumbAI.cs">
+  <btroot>
+    <selector name="dumb AI root">
+      <sequence name="free engage">
+	<lanceHasLOS />
+	<findVisibleEnemies />
+	<selector>
+	  <sequence name="CanMove">
+	    <movementAvailable />
+	    <sortEnemiesByThreat />
+	    <moveTowardsHighestPriorityEnemy />
+	  </sequence>
+	  <sequence name="CanAttack">
+	    <attackAvailable />
+	    <sortEnemiesByEffectiveness />
+	    <shootAtHighestPriorityEnemy />
+	  </sequence>
+	</selector>
+      </sequence>
+      <selector>
+	<sequence name="hunt previously seen">
+	  <!-- TODO pick one hunt strategy (at random?) and pursue that as a long-running task. -->
+	  <movementAvailable />
+	  <findPreviouslySeenEnemies />
+	  <sortEnemiesByProximity />
+	  <moveTowardsHighestPriorityEnemy />
+	</sequence>
+      </selector>
+      <selector name="patrol">
+	<!-- TODO move lance as one towards patrol node -->
+	<fail />
+      </selector>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

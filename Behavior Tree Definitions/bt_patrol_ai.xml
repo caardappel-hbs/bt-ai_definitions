@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<tree classname="PatrolAI_BT" filename="BT_PatrolAI.cs">
+  <btroot>
+    <selector name="route AI root">
+      <sequence name="incrementally patrol">
+	<unitHasRoute />
+  	<selector>
+	  <lanceHasStartedRoute />
+	  <lanceStartRoute />
+	</selector>
+	<inverter>
+	  <lanceHasCompletedRoute />
+	</inverter>
+	<moveAlongRoute />
+      </sequence>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

@@ -1,0 +1,585 @@
+<?xml version="1.0"?>
+<tree classname="CoreAI_BT" filename="BT_CoreAI.cs">
+  <btroot>
+    <selector name="core AI root">
+      <inverter name="startup cleanup">
+        <successDecorator>
+          <sequence>
+          	<clearSensorLock/>
+          	<clearActiveProbeHasTargets/>
+          </sequence>
+        </successDecorator>
+      </inverter>
+      <sequence name="if shutdown, restart">
+        <isShutdown />
+        <mechStartUp />
+      </sequence>
+      <sequence name="if prone, stand up">
+        <movementAvailable />
+        <isProne />
+        <stand />
+      </sequence>
+      <sequence name="if inspire available, maybe inspire">
+        <inspireAvailable />
+        <successDecorator>
+          <sequence>
+            <movementAvailable />
+            <blockUntilPathfindingReady />
+          </sequence>
+        </successDecorator>
+        <evaluateInspirationValue />
+        <claimInspiration />
+      </sequence>
+      <sequence name="get inside encounter bounds">
+        <movementAvailable />
+        <inverter>
+          <isInsideEncounterBounds />
+        </inverter>
+        <blockUntilPathfindingReady />
+        <moveInsideEncounterBounds />
+      </sequence>
+      <sequence name="comply with stay inside region order">
+        <movementAvailable />
+        <hasStayInsideRegion />
+        <inverter>
+          <isInsideStayInsideRegion />
+        </inverter>
+        <blockUntilPathfindingReady />
+        <moveToStayInsideRegion />
+      </sequence>
+      <sequence name="pre-attack move">
+        <movementAvailable />
+        <blockUntilPathfindingReady />
+        <selector>
+          <sequence name="pre-attack lance move">
+            <hasPreAttackLanceMove />
+            <moveLanceToPreAttackDestination />
+          </sequence>
+          <sequence name="pre-attack unit move">
+            <hasPreAttackUnitMove />
+            <moveUnitToPreAttackDestination />
+          </sequence>
+        </selector>
+      </sequence>
+      <sequence name="free engage">
+        <lanceDetectsEnemies />
+        <findDetectedEnemies />
+        <isAlerted />
+        <selector>
+          <sequence name="CanMove">
+            <movementAvailable />
+            <blockUntilPathfindingReady />
+            <successDecorator name="reset active probe">
+            	<sequence name="ClearActiveProbe">
+	            	<hasActiveProbeAbility />
+	            	<clearActiveProbeHasTargets />
+	            </sequence>
+	        </successDecorator>
+            <successDecorator name="maybe sensor lock">
+              <sequence name="EvalSensorLock">
+                <clearSensorLock/>
+                <hasSensorLockAbility />
+                <hasSensorLockTarget />
+                <sortEnemiesBySensorLockQuality />
+                <recordHighestPriorityEnemyAsSensorLockTarget />
+              </sequence>
+            </successDecorator>
+            <selector name="offense / defense">
+              <sequence name="if overheated, maybe brace">
+                <isOverheated />
+                <randomPercentageLessThanBV arguments="Float_BraceWhenOverheatedPercentage" />
+                <inverter>
+                  <anyHostileBehindMe />
+                </inverter>
+                <brace />
+              </sequence>
+              <sequence name="Offensive Move">
+                <inverter>
+                  <isBVTrue arguments="Bool_AlwaysDefensiveMood" />
+                </inverter>
+                <selector>
+                  <isBVTrue arguments="Bool_AlwaysOffensiveMood" />
+                  <inverter>
+                    <hasRangedWeapons />
+                  </inverter>
+                  <inverter>
+                    <sequence>
+                      <randomPercentageLessThanBV arguments="Float_UnsteadyCausesDefensiveMovePercentage" />
+                      <isUnsteady />
+                    </sequence>
+                  </inverter>
+                </selector>
+                <selector>
+                  <sequence>
+                    <isBVTrue arguments="Bool_RuthlessPriorityTargeting" />
+                    <inverter>
+                      <wasTargetedRecently />
+                    </inverter>
+                    <hasPriorityTarget />
+                    <setMood arguments="Ruthless" />
+                  </sequence>
+                  <sequence>
+                    <hasRecordedSensorLockTarget />
+                    <setMood arguments="SensorLocking" />
+                  </sequence>
+                  <setMood arguments="Aggressive" />
+                </selector>
+                <selector>
+                  <canMoveAndShootWithoutOverheating />
+                  <canMeleeHostileTargets />
+                  <canDFAHostileTargets />
+                </selector>
+                <successDecorator name="Aggressive Movement">
+                  <sequence>
+                    <sortEnemiesByThreat />
+                    <selector name="PriorityMove">
+                      <sequence>
+                        <inverter>
+                          <wasTargetedRecently />
+                        </inverter>
+                        <hasPriorityTarget />
+                        <randomPercentageLessThanBV arguments="Float_PriorityMovePercentage" />
+                        <usePreferredTargetToHitThreshold />
+                        <sortEnemiesByPriorityList />
+                      </sequence>
+                      <maybeFilterOutPriorityTargets />
+                      <filterKeepingRecentAttackers />
+                      <succeed />
+                    </selector>
+                    <useNormalToHitThreshold />
+                    <clearMoveCandidates />
+                    <successDecorator>
+                    	<sequence>
+                    		<setNoLOFToHostilesCache arguments="False" />
+		                    <inverter name="No LOF to hostiles in range">
+		                      <selector>
+		                        <sequence name="simple LOF">
+		                          <isBVTrue arguments="Bool_SimpleShortRangeLOF"/>
+		                          <hasLOFToAnyHostileFromReachableLocations />
+		                        </sequence>
+		                        <sequence name="not simple LOF">
+		                          <inverter>
+		                            <isBVTrue arguments="Bool_SimpleShortRangeLOF"/>
+		                          </inverter>
+		                          <areAnyHostilesInWeaponRange />
+		                          <hasDirectLOFToAnyHostileFromReachableLocations />
+		                        </sequence>
+		                      </selector>
+		                    </inverter>
+		                    <setNoLOFToHostilesCache arguments="True" />
+	                	</sequence>
+                    </successDecorator>
+                    <selector>
+                	  <sequence name="move out of nook">
+                	  	<isUrbanBiome />
+                	  	<isBVTrue arguments="Bool_IsNavigatingNook" />
+                	  	<setNavigatingNook arguments="False" />
+                	  	<isBVTrue arguments="Bool_NoLOFToHostiles" />
+                        <setNavigatingNook arguments="True" />
+                		<generateForcedNormalMoveTowardDistantHostileCandidates />
+	                    <inverter>
+	                      <highestMoveCandidateIsStationary />
+	                    </inverter>
+	                    <moveTowardsHighestPriorityMoveCandidate arguments="False"/>
+                	  </sequence>
+                      <sequence name="move towards combat">
+                      	<isBVTrue arguments="Bool_NoLOFToHostiles" />
+                        <successDecorator>
+                          <sequence>
+                            <inverter>
+                              <isInterleaved />
+                            </inverter>
+                            <hasRecordedSensorLockTarget/>
+                            <sensorLockRecordedSensorLockTarget/>
+                            <clearSensorLock/>
+                          </sequence>
+                        </successDecorator>
+                        <selector>
+                          <sequence name="sprint towards combat">
+                            <sprintAvailable />
+                            <inverter>
+                              <areAnyDetectedHostilesInWeaponRangePlusSprintDistance />
+                            </inverter>
+                            <inverter>
+                              <hasRecordedSensorLockTarget />
+                            </inverter>
+                            <selector>
+                              <sequence>
+                                <clearMoveCandidates />
+                                <generateSprintMoveTowardDistantHostileCandidates />
+                                <inverter>
+                                  <highestMoveCandidateIsStationary />
+                                </inverter>
+                                <moveTowardsHighestPriorityMoveCandidate arguments="False"/>
+                              </sequence>
+                              <sequence>
+                                <clearMoveCandidates />
+                                <generateSprintMoveTowardTeammatesCandidates />
+                                <inverter>
+                                  <highestMoveCandidateIsStationary />
+                                </inverter>
+                                <moveTowardsHighestPriorityMoveCandidate arguments="False"/>
+                              </sequence>
+                            </selector>
+                          </sequence>
+                          <sequence name="normal move towards combat">
+                            <selector>
+                              <sequence>
+                                <clearMoveCandidates />
+                                <selector>
+                                	<generateNormalMoveTowardDistantHostileCandidates />
+                                	<sequence>
+                                		<isUrbanBiome />
+                                		<isInMinWeaponRange />
+                                		<setNavigatingNook arguments="True" />
+                                		<generateForcedNormalMoveTowardDistantHostileCandidates />
+                                	</sequence>
+                                </selector>
+                                <inverter>
+                                  <highestMoveCandidateIsStationary />
+                                </inverter>
+                                <moveTowardsHighestPriorityMoveCandidate arguments="False"/>
+                              </sequence>
+                              <sequence>
+                                <clearMoveCandidates />
+                                <generateNormalMoveTowardTeammatesCandidates />
+                                <inverter>
+                                  <highestMoveCandidateIsStationary />
+                                </inverter>
+                                <moveTowardsHighestPriorityMoveCandidate arguments="False"/>
+                              </sequence>
+                            </selector>
+                          </sequence>
+                        </selector>
+                      </sequence>
+                      <sequence>
+                        <generateForwardMoveCandidates />
+                        <generateReverseMoveCandidates />
+                        <successDecorator>
+                          <sequence>
+                            <isBVTrue arguments="Bool_AllowAttack" />
+                            <canMeleeHostileTargets />
+                            <generateMeleeMoveCandidates />
+                          </sequence>
+                        </successDecorator>
+                        <successDecorator>
+                          <sequence>
+                            <inverter>
+                              <isOverheated />
+                            </inverter>
+                            <generateJumpMoveCandidates />
+                          </sequence>
+                        </successDecorator>
+                        <generateStationaryMoveCandidates />
+                        <successDecorator>
+                          <sequence>
+                            <sprintAvailable />
+                            <inverter>
+                              <hasRecordedSensorLockTarget />
+                            </inverter>
+                            <generateSprintMoveCandidates />
+                          </sequence>
+                        </successDecorator>
+                        <successDecorator>
+                          <sequence>
+                            <hasRecordedSensorLockTarget/>
+                            <filterNonSensorLockMoves />
+                          </sequence>
+                        </successDecorator>
+                        <successDecorator name="if priority targeting, remove non-LOF move candidates">
+                          <sequence>
+                            <isBVTrue arguments="Bool_RuthlessPriorityTargeting" />
+                            <inverter>
+                              <wasTargetedRecently />
+                            </inverter>
+                            <hasPriorityTarget />
+                            <hasLOFToAnyHostileFromReachableLocations />
+                            <filterOutNonLOFMoves />
+                          </sequence>
+                        </successDecorator>
+                        <filterMovesForHeat />
+                        <successDecorator>
+                          <sequence>
+                            <hasMoveCandidates />
+                            <sortMoveCandidatesByInfMap />
+                          </sequence>
+                        </successDecorator>
+                        <selector>
+                          <sequence name="Reckless skill">
+                            <hasRecklessSkill />
+                            <hasLOSToAnyHostile />
+                            <isBVTrue arguments="Bool_AllowAttack" />
+                            <attackAvailable />
+                            <randomPercentageLessThanBV arguments="Float_UseRecklessSkillPercentageChance" />
+							<selector>
+								<sequence>
+									<hasECMGhostState/>
+									<selector>
+										<sequence>
+											<hasMinimumStealthPips/>
+											<shootAtHighestPriorityEnemy/>
+										</sequence>
+										<sequence>
+											<canDoSignificantWhileGhostedDamage />
+											<shootAtHighestPriorityEnemy/>
+										</sequence>
+									</selector>
+								</sequence>
+								<sequence>
+									<inverter>
+										<hasECMGhostState/>
+									</inverter>
+									<shootAtHighestPriorityEnemy/>
+								</sequence>
+							</selector>
+                          </sequence>
+                          <sequence name="bulwark skill">
+                            <hasBulwarkSkill />
+                            <isBVTrue arguments="Bool_AllowAttack" />
+                            <attackAvailable />
+                            <isBVTrue arguments="Bool_UseBulwarkActions" />
+                            <closeToIdealRange />
+                            <hasDirectLOFToAnyHostile />
+                            <isStationaryMoveInBulwarkThreshold />
+							<selector>
+								<sequence>
+									<hasECMGhostState/>
+									<selector>
+										<sequence>
+											<hasMinimumStealthPips/>
+											<executeStationaryAttack/>
+										</sequence>
+										<sequence>
+											<canDoSignificantWhileGhostedDamage />
+											<executeStationaryAttack/>
+										</sequence>
+									</selector>
+								</sequence>
+								<sequence>
+									<inverter>
+										<hasECMGhostState/>
+									</inverter>
+									<executeStationaryAttack />
+								</sequence>
+							</selector>
+                          </sequence>
+                          <sequence name="stationary (e.g. dfa, melee) attack">
+                            <isBVTrue arguments="Bool_AllowAttack" />
+                            <attackAvailable />
+                            <highestMoveCandidateIsStationary />
+							<selector>
+								<sequence>
+									<hasECMGhostState/>
+									<selector>
+										<sequence>
+											<hasMinimumStealthPips/>
+											<executeStationaryAttack/>
+										</sequence>
+										<sequence>
+											<canDoSignificantWhileGhostedDamage />
+											<executeStationaryAttack/>
+										</sequence>
+									</selector>
+								</sequence>
+								<sequence>
+									<inverter>
+										<hasECMGhostState/>
+									</inverter>
+									<executeStationaryAttack />
+								</sequence>
+							</selector>
+                          </sequence>
+                          <sequence name="brace if no moves">
+                            <inverter>
+                              <hasMoveCandidates />
+                            </inverter>
+                            <brace />
+                          </sequence>
+                          <moveTowardsHighestPriorityMoveCandidate arguments="True"/>
+                        </selector>
+                      </sequence>
+                    </selector>
+                  </sequence>
+                </successDecorator>
+              </sequence>
+              <sequence name="Defensive Move">
+                <debugLog arguments="Defensive Move"/>
+                <inverter>
+                  <isBVTrue arguments="Bool_AlwaysOffensiveMood" />
+                </inverter>
+                <setMood arguments="Defensive" />
+                <selector>
+                  <sequence name="Brace if at acceptable range to cool down">
+                    <isOverheated />
+                    <isOutsideCoolDownRange />
+                    <inverter>
+                      <hasLOSToAnyHostile />
+                    </inverter>
+                    <inverter>
+                      <anyHostileBehindMe />
+                    </inverter>
+                    <brace />
+                  </sequence>
+                  <sequence name="move to defensive position">
+                    <clearMoveCandidates />
+                    <generateMoveCandidates />
+                    <sortMoveCandidatesByInfMap />
+                    <moveTowardsHighestPriorityMoveCandidate arguments="True"/>
+                  </sequence>
+                </selector>
+              </sequence>
+            </selector>
+          </sequence>
+          <sequence name="Sensor Lock Second Chance">
+            <inverter>
+              <hasRecordedSensorLockTarget />
+            </inverter>
+            <hasSensorLockAbility />
+            <hasSensorLockTarget />
+            <sortEnemiesBySensorLockQuality />
+            <recordHighestPriorityEnemyAsSensorLockTarget />
+            <setMood arguments="Aggressive" />
+            <sensorLockRecordedSensorLockTarget />
+            <clearSensorLock/>
+          </sequence>
+          <sequence name="ChoseToSensorLockDuringMove">
+            <hasSensorLockAbility />
+            <hasRecordedSensorLockTarget />
+            <setMood arguments="Aggressive" />
+            <sensorLockRecordedSensorLockTarget />
+            <clearSensorLock/>
+          </sequence>
+          <sequence name="FireActiveProbeIfWeHaveTargets">
+          	<hasActiveProbeAbility />
+          	<doesActiveProbeHaveTargets />
+          	<fireActiveProbe />
+          	<clearActiveProbeHasTargets />
+          </sequence>
+          <sequence name="ChooseToActiveProbe">
+          	<hasActiveProbeAbility />
+          	<inverter>
+          		<doesActiveProbeHaveTargets />
+          	</inverter>
+          	<cacheHasActiveProbeTargets />
+          	<doesActiveProbeHaveTargets />
+          	<fireActiveProbe />
+          	<clearActiveProbeHasTargets />
+          </sequence>
+          <sequence name="CanAttack">
+            <isBVTrue arguments="Bool_AllowAttack" />
+            <attackAvailable />
+            <withLogContext arguments="Shoot">
+              <selector>
+                <sequence name="react to being unsteady">
+                  <debugLogToContext arguments="checking unsteady" context="Shoot" />
+                  <isUnsteady />
+                  <debugLogToContext arguments="is unsteady" context="Shoot" />
+                  <expectedDamageToMeLessThan arguments="Float_UnsteadyOverkillThreshold" />
+                  <randomPercentageLessThanBV arguments="Float_UnsteadyCausesBracePercentage" />
+                  <debugLogToContext arguments="die roll less than Float_UnsteadyCausesBracePercentage" context="Shoot" />
+                  <inverter>
+                    <anyHostileBehindMe />
+                  </inverter>
+                  <debugLogToContext arguments="no hostiles behind me" context="Shoot" />
+                  <brace />
+                  <debugLogToContext arguments="braced" context="Shoot" />
+                </sequence>
+                <sequence>
+                  <debugLogToContext arguments="sorting enemies by threat" context="Shoot" />
+                  <sortEnemiesByThreat />
+                  <debugLogEnemiesByThreat />
+                  <useNormalToHitThreshold />
+                  <debugLogToContext arguments="checking PriorityAttack" context="Shoot" />
+                  <selector name="PriorityAttack">
+                    <sequence>
+                      <inverter>
+                        <wasTargetedRecently />
+                      </inverter>
+                      <debugLogToContext arguments="was not targeted recently" context="Shoot" />
+                      <randomPercentageLessThanBV arguments="Float_PriorityAttackPercentage" />
+                      <debugLogToContext arguments="random number was less than Float_PriorityAttackPercentage" context="Shoot" />
+                      <sortEnemiesByPriorityList />
+                      <debugLogToContext arguments="sorted enemies by priority list" context="Shoot" />
+                      <debugLogEnemiesByThreat />
+                    </sequence>
+                    <maybeFilterOutPriorityTargets />
+                    <filterKeepingRecentAttackers />
+                  </selector>
+                  <debugLogToContext arguments="shooting at highest priority enemy" context="Shoot" />
+				  <selector>
+					<sequence>
+						<hasECMGhostState/>
+						<selector>
+							<sequence>
+								<hasMinimumStealthPips/>
+								<shootAtHighestPriorityEnemy/>
+							</sequence>
+							<sequence>
+								<canDoSignificantWhileGhostedDamage />
+								<shootAtHighestPriorityEnemy/>
+							</sequence>
+						</selector>
+					</sequence>
+					<sequence>
+						<inverter>
+							<hasECMGhostState/>
+						</inverter>
+						<shootAtHighestPriorityEnemy/>
+					</sequence>
+				  </selector>
+                  <debugLogToContext arguments="successfully issued shoot order. Complete." context="Shoot" />
+                </sequence>
+              </selector>
+            </withLogContext>
+          </sequence>
+        </selector>
+      </sequence>
+      <sequence name="post-attack move">
+        <movementAvailable />
+        <blockUntilPathfindingReady />
+        <selector>
+          <sequence name="post-attack lance move">
+            <hasPostAttackLanceMove />
+            <moveLanceToPostAttackDestination />
+          </sequence>
+          <sequence name="post-attack unit move">
+            <hasPostAttackUnitMove />
+            <moveUnitToPostAttackDestination />
+          </sequence>
+        </selector>
+      </sequence>
+      <sequence name="hunt previously seen">
+        <isAlerted />
+        <movementAvailable />
+        <blockUntilPathfindingReady />
+        <findPreviouslySeenEnemies />
+        <sortEnemiesByDistanceToLastSeenLocation />
+        <selector name="PriorityHunt">
+          <sequence>
+            <inverter>
+              <wasTargetedRecently />
+            </inverter>
+            <sortEnemiesByPriorityList />
+          </sequence>
+          <filterKeepingRecentAttackers />
+          <succeed />
+        </selector>
+        <moveTowardsHighestPriorityEnemyLastSeenLocation />
+      </sequence>
+      <sequence name="patrol">
+        <movementAvailable />
+        <unitHasRoute />
+        <inverter>
+          <lanceHasCompletedRoute/>
+        </inverter>
+        <selector>
+          <lanceHasStartedRoute />
+          <lanceStartRoute />
+        </selector>
+        <blockUntilPathfindingReady />
+        <moveAlongRoute />
+      </sequence>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

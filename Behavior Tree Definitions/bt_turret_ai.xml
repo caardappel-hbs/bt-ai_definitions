@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<tree classname="TurretAI_BT" filename="BT_TurretAI.cs">
+  <btroot>
+    <selector name="turret AI root">
+      <sequence name="free engage">
+	<lanceHasLOS />
+	<findVisibleEnemies />
+	<selector>
+	  <sequence name="CanAttack">
+	    <attackAvailable />
+	    <sortEnemiesByEffectiveness />
+	    <shootAtHighestPriorityEnemy />
+	  </sequence>
+	</selector>
+      </sequence>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

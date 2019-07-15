@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<tree classname="PatrolOppAI_BT" filename="BT_PatrolOppAI.cs">
+  <btroot>
+    <selector name="Patrol With Opportunistic Shooting AI root">
+      <sequence name="if shutdown, restart">
+	<isShutdown />
+	<mechStartUp />
+      </sequence>
+      <sequence name="if prone, stand up">
+	<movementAvailable />
+	<isProne />
+	<stand />
+      </sequence>
+      <sequence name="patrol opportunistic shoot">
+	<movementAvailable />
+	<unitHasRoute />
+  	<selector>
+	  <lanceHasStartedRoute />
+	  <lanceStartRoute />
+	</selector>
+	<inverter>
+	  <lanceHasCompletedRoute />
+	</inverter>
+	<moveAlongRoute />
+      </sequence>
+      <sequence name="opportunity fire">
+	<lanceDetectsEnemies />
+	<findDetectedEnemies />
+	<attackAvailable />
+	<sortEnemiesByThreat />
+	<useNormalToHitThreshold />
+	<selector name="PriorityAttack">
+	  <sequence>
+	    <inverter>
+	      <wasTargetedRecently />
+	    </inverter>
+	    <randomPercentageLessThanBV arguments="Float_PriorityAttackPercentage" />
+	    <sortEnemiesByPriorityList />
+	  </sequence>
+	  <sequence>
+	    <maybeFilterOutPriorityTargets />
+	    <filterKeepingRecentAttackers />
+	  </sequence>
+	  <succeed />
+	</selector>
+	<shootAtHighestPriorityEnemy />
+      </sequence>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

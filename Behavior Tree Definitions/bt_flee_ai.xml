@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<tree classname="FleeAI_BT" filename="BT_FleeAI.cs">
+  <btroot>
+    <selector name="Flee AI root">
+      <sequence name="run away">
+	<lanceDetectsEnemies />
+	<findDetectedEnemies />
+	<movementAvailable />
+	<blockUntilPathfindingReady />
+	<clearMoveCandidates />
+	<generateMoveCandidates />
+	<sortMoveCandidatesByDecreasingDistanceToHostiles />
+	<filterMoveCandidatesByLowestLOSToHostiles />
+	<moveTowardsHighestPriorityMoveCandidate arguments="False"/>
+      </sequence>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<tree classname="TutorialSprint_BT" filename="BT_TutorialSprint.cs">
+  <btroot>
+    <selector>
+      <sequence name="attack sequence">
+	<attackAvailable />
+	<findPlayerTutorialTarget />
+	<shootTrainingWeaponsAtTarget />
+      </sequence>
+      <brace />
+    </selector>
+  </btroot>
+</tree>

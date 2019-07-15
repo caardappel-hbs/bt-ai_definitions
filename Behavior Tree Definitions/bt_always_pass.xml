@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<tree classname="AlwaysPass_BT" filename="BT_AlwaysPass.cs">
+  <btroot>
+    <brace name="always pass root" />
+  </btroot>
+</tree>
